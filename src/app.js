@@ -83,26 +83,31 @@ class App {
     await page.click(".sc-ANeCo"); // кнопка заметок (может быть с другим классом в версии чгу)
 
     if (this.settings.saveNotes) {
+      fs.mkdirSync(`${this.settings.savePath}/notes`, { recursive: true });
+
       setTimeout(async () => {
         const exportPdf = await page.waitForSelector(
           "#layout > div:nth-child(2) > div > div > iframe"
         );
 
-        const exportPdfLink = new URL(
+        const padLink = new URL(
           await exportPdf?.evaluate((el) => {
             return el.getAttribute("src");
           })
         );
 
-        console.log(`Ссылка заметок: ${exportPdfLink.toString()}`);
+        console.log(`Ссылка заметок: ${padLink.toString()}`);
 
-        const pdfExport = `${
+        const notesExportLink = `${
           this.url.origin
-        }/pad/p/${exportPdfLink.searchParams.get("padName")}/export/${
+        }/pad/p/${padLink.searchParams.get("padName")}/export/${
           this.settings.savedNotesFormat
         }${this.url.search}`;
 
-        console.log("Ссылка экспорта PDF:", pdfExport);
+        console.log(
+          `Ссылка экспорта ${this.settings.savedNotesFormat}:`,
+          notesExportLink
+        );
 
         intro("Начинаю сохранять заметки");
 
@@ -116,33 +121,44 @@ class App {
 
         const s = spinner();
         s.start("Начинаю сохранять заметки");
-        setInterval(async () => {
-          try {
-            await page.evaluate((url) => {
-              window.open(url);
-            }, pdfExport);
 
-            this.currNoteId += 1;
-            s.message(`Сохраняю заметку ${this.currNoteId}`);
-            setTimeout(() => {
-              try {
-                fs.renameSync(
-                  `${this.settings.savePath}/notes/Shared_Notes.${this.settings.savedNotesFormat}`,
-                  `${this.settings.savePath}/notes/${this.currNoteId}.${this.settings.savedNotesFormat}`
-                );
-                s.message(`Заметка ${this.currNoteId} сохранена`);
-              } catch (e) {
-                console.log(e);
-                s.message(
-                  `Заметка ${this.currNoteId} не сохранена (ошибка в переименовывании)`
-                );
-              }
-            }, 10000);
-          } catch {
-            s.stop(`Заметка ${this.currNoteId} не сохранена`);
+        fs.watch(`${this.settings.savePath}/notes`, (event, filename) => {
+          if (
+            event === "change" &&
+            filename === `Shared_Notes.${this.settings.savedNotesFormat}`
+          ) {
+            try {
+              fs.renameSync(
+                `${this.settings.savePath}/notes/Shared_Notes.${this.settings.savedNotesFormat}`,
+                `${this.settings.savePath}/notes/${this.currNoteId}.${this.settings.savedNotesFormat}`
+              );
+              s.message(`Заметка ${this.currNoteId} сохранена`);
+            } catch (e) {
+              s.message(
+                `Заметка ${this.currNoteId} не сохранена (ошибка в переименовывании) (${e.message})`
+              );
+            }
           }
+        });
+
+        this.save_notes(notesExportLink, s, page);
+        setInterval(() => {
+          this.save_notes(notesExportLink, s, page);
         }, 300000);
       }, 4000);
+    }
+  }
+
+  async save_notes(pdfExport, s, page) {
+    try {
+      await page.evaluate((url) => {
+        window.open(url);
+      }, pdfExport);
+
+      this.currNoteId += 1;
+      s.message(`Сохраняю заметку ${this.currNoteId}`);
+    } catch (e) {
+      s.stop(`Заметка ${this.currNoteId} не сохранена (${e.message})`);
     }
   }
 
