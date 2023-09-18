@@ -1,5 +1,13 @@
 import puppeteer from "puppeteer";
-import { intro, outro, confirm, text, group, spinner } from "@clack/prompts";
+import {
+  intro,
+  outro,
+  confirm,
+  text,
+  group,
+  spinner,
+  select,
+} from "@clack/prompts";
 import axios from "axios";
 import fs from "fs-extra";
 import path from "path";
@@ -13,6 +21,19 @@ class App {
       url: () => text({ message: "Введите URL BigBlueButton" }),
       downloadSlides: () => confirm({ message: "Скачать презентацию?" }),
       saveNotes: () => confirm({ message: "Сохранять заметки?" }),
+      savedNotesFormat: () =>
+        select({
+          message: "Формат заметок?",
+          initialValue: { value: "pdf", label: "PDF" },
+          options: [
+            { value: "pdf", label: "PDF" },
+            { value: "doc", label: "Word" },
+            { value: "html", label: "HTML" },
+            { value: "txt", label: "Текст" },
+            { value: "odt", label: "ODF (Open Document Format)" },
+            { value: "etherpad", label: "Etherpad" },
+          ],
+        }),
       savePath: ({ results }) => {
         if (results.downloadSlides || results.saveNotes)
           return text({
@@ -77,13 +98,13 @@ class App {
 
         const pdfExport = `${
           this.url.origin
-        }/pad/p/${exportPdfLink.searchParams.get("padName")}/export/pdf${
-          this.url.search
-        }`; //https://test26.bigbluebutton.org/pad/p/g.bH65ceYnYNgryQI7%24notes/export/pdf?sessionToken=qktqh1o7mhws8bwo
+        }/pad/p/${exportPdfLink.searchParams.get("padName")}/export/${
+          this.settings.savedNotesFormat
+        }${this.url.search}`;
 
         console.log("Ссылка экспорта PDF:", pdfExport);
 
-        console.log("Начинаю сохранять заметки");
+        intro("Начинаю сохранять заметки");
 
         const client = await page.target().createCDPSession();
         await client.send("Page.setDownloadBehavior", {
@@ -92,25 +113,32 @@ class App {
         });
 
         this.currNoteId = 0;
+
+        const s = spinner();
+        s.start("Начинаю сохранять заметки");
         setInterval(async () => {
-          const s = spinner();
-          s.start("Сохраняю заметку");
           try {
             await page.evaluate((url) => {
               window.open(url);
             }, pdfExport);
 
             this.currNoteId += 1;
-
+            s.message(`Сохраняю заметку ${this.currNoteId}`);
             setTimeout(() => {
-              fs.renameSync(
-                `${this.settings.savePath}/notes/Shared_Notes.pdf`,
-                `${this.settings.savePath}/notes/${this.currNoteId}.pdf`
-              );
-              s.stop(`Заметка ${this.currNoteId} сохранена`);
-            }, 5000);
-          } catch (e) {
-            console.log(e);
+              try {
+                fs.renameSync(
+                  `${this.settings.savePath}/notes/Shared_Notes.${this.settings.savedNotesFormat}`,
+                  `${this.settings.savePath}/notes/${this.currNoteId}.${this.settings.savedNotesFormat}`
+                );
+                s.message(`Заметка ${this.currNoteId} сохранена`);
+              } catch (e) {
+                console.log(e);
+                s.message(
+                  `Заметка ${this.currNoteId} не сохранена (ошибка в переименовывании)`
+                );
+              }
+            }, 10000);
+          } catch {
             s.stop(`Заметка ${this.currNoteId} не сохранена`);
           }
         }, 300000);
@@ -121,23 +149,29 @@ class App {
   async download_svgs(base_url) {
     intro("Скачиваю слайды");
     let id = 0;
+    const s = spinner();
+
+    s.start("Начинаю скачивание слайдов");
 
     while (true) {
-      const s = spinner();
-      s.start(`Скачиваю слайд ${id}`);
       id += 1;
+
+      s.message(`Скачиваю слайд (${id}/${id - 1})`);
+
       try {
-        const r = await axios.get(`${base_url}/${id}`, { timeout: 2000 });
+        const r = await axios.get(`${base_url}/${id}`);
         await fs.outputFile(
           `${this.settings.savePath}/slides/${id}.svg`,
           r.data
         );
-        s.stop(`Слайд ${id} скачан`);
+        s.message(`Слайд ${id} скачан (${id}/${id})`);
       } catch (e) {
-        s.stop(`Слайд ${id} не найден`);
+        s.message(`Слайд ${id} не найден (${id}/${id}), заканчиваю`);
         break;
       }
     }
+
+    s.stop(`Скачивание слайдов завершено (${id}/${id})`);
     outro("Скачивание завершено");
   }
 }
