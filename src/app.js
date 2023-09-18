@@ -1,3 +1,5 @@
+#!usr/bin/env node
+
 import puppeteer from "puppeteer";
 import {
   intro,
@@ -18,7 +20,8 @@ class App {
   }
   async init() {
     this.settings = await group({
-      url: () => text({ message: "Введите URL BigBlueButton" }),
+      url: () =>
+        text({ message: "Введите ссылку с которой можно попасть на Вебинар" }),
       downloadSlides: () => confirm({ message: "Скачать презентацию?" }),
       saveNotes: () => confirm({ message: "Сохранять заметки?" }),
       savedNotesFormat: () =>

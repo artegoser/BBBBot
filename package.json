@@ -10,6 +10,9 @@
   "keywords": [
     "BigBlueButton"
   ],
+  "bin": {
+    "bbbbot": "dist/app.js"
+  },
   "type": "module",
   "author": "artegoser",
   "license": "MIT",
