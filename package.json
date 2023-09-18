@@ -11,7 +11,7 @@
     "BigBlueButton"
   ],
   "bin": {
-    "bbbbot": "dist/app.js"
+    "bbbbot": "src/app.js"
   },
   "type": "module",
   "author": "artegoser",
