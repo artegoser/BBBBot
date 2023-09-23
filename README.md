@@ -1,2 +1,6 @@
-# BBBBot
- Helpfull tools for BigBlueButton
+### Установка и запуск
+
+```
+npm i bbbbot@latest -g
+bbbbot
+```
