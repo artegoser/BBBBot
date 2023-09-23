@@ -55,10 +55,10 @@ class App {
 
     await page.goto(this.settings.url);
 
-    // может в версии чгу нормально будет работать, но в тестовой нужно создавать новую сессию каждый раз иначе не заходит
     await intro("Настройка в браузере");
     const result = await confirm({
-      message: "Вошел?",
+      message: "Войдите на вебинар и нажмите Yes.",
+      defaultViewport: null,
     });
     await outro("Настройка в браузере завершена");
 
