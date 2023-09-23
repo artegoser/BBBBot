@@ -127,13 +127,10 @@ class App {
         s.start("Начинаю сохранять заметки");
 
         fs.watch(`${this.settings.savePath}/notes`, (event, filename) => {
-          if (
-            event === "change" &&
-            filename === `Shared_Notes.${this.settings.savedNotesFormat}`
-          ) {
+          if (event === "change" && filename.startsWith("[")) {
             try {
               fs.renameSync(
-                `${this.settings.savePath}/notes/Shared_Notes.${this.settings.savedNotesFormat}`,
+                `${this.settings.savePath}/notes/${filename}`,
                 `${this.settings.savePath}/notes/${this.currNoteId}.${this.settings.savedNotesFormat}`
               );
               s.message(`Заметка ${this.currNoteId} сохранена`);
