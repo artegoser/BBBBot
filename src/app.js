@@ -94,54 +94,58 @@ class App {
       fs.mkdirSync(`${this.settings.savePath}/notes`, { recursive: true });
 
       setTimeout(async () => {
-        const exportPdf = await page.waitForSelector(
-          ".note--1ESx6q > iframe:nth-child(2)"
-        );
+        try {
+          const exportPdf = await page.waitForSelector(
+            ".note--1ESx6q > iframe:nth-child(2)"
+          );
 
-        const padLink = new URL(
-          await exportPdf?.evaluate((el) => {
-            return el.getAttribute("src");
-          })
-        );
+          const padLink = new URL(
+            await exportPdf?.evaluate((el) => {
+              return el.getAttribute("src");
+            })
+          );
 
-        console.log(`Ссылка заметок: ${padLink.toString()}`);
+          console.log(`Ссылка заметок: ${padLink.toString()}`);
 
-        const notesExportLink = `${this.url.origin}${padLink.pathname}/export/${this.settings.savedNotesFormat}${this.url.search}`;
+          const notesExportLink = `${this.url.origin}${padLink.pathname}/export/${this.settings.savedNotesFormat}${this.url.search}`;
 
-        console.log(
-          `Ссылка экспорта ${this.settings.savedNotesFormat}:`,
-          notesExportLink
-        );
+          console.log(
+            `Ссылка экспорта ${this.settings.savedNotesFormat}:`,
+            notesExportLink
+          );
 
-        intro("Начинаю сохранять заметки");
+          intro("Начинаю сохранять заметки");
 
-        const client = await page.target().createCDPSession();
-        await client.send("Page.setDownloadBehavior", {
-          behavior: "allow",
-          downloadPath: path.resolve(`${this.settings.savePath}/notes/`),
-        });
+          const client = await page.target().createCDPSession();
+          await client.send("Page.setDownloadBehavior", {
+            behavior: "allow",
+            downloadPath: path.resolve(`${this.settings.savePath}/notes/`),
+          });
 
-        this.currNoteId = 0;
+          this.currNoteId = 0;
 
-        const s = spinner();
-        s.start("Начинаю сохранять заметки");
+          const s = spinner();
+          s.start("Начинаю сохранять заметки");
 
-        fs.watch(`${this.settings.savePath}/notes`, (event, filename) => {
-          if (event === "change" && filename.startsWith("[")) {
-            try {
-              fs.renameSync(
-                `${this.settings.savePath}/notes/${filename}`,
-                `${this.settings.savePath}/notes/${this.currNoteId}.${this.settings.savedNotesFormat}`
-              );
-              s.message(`Заметка ${this.currNoteId} сохранена`);
-            } catch {}
-          }
-        });
+          fs.watch(`${this.settings.savePath}/notes`, (event, filename) => {
+            if (event === "change" && filename.startsWith("[")) {
+              try {
+                fs.renameSync(
+                  `${this.settings.savePath}/notes/${filename}`,
+                  `${this.settings.savePath}/notes/${this.currNoteId}.${this.settings.savedNotesFormat}`
+                );
+                s.message(`Заметка ${this.currNoteId} сохранена`);
+              } catch {}
+            }
+          });
 
-        this.save_notes(notesExportLink, s, page);
-        setInterval(() => {
           this.save_notes(notesExportLink, s, page);
-        }, 300000);
+          setInterval(() => {
+            this.save_notes(notesExportLink, s, page);
+          }, 300000);
+        } catch {
+          console.log("Не удалось найти заметки (возможно их нет)");
+        }
       }, 4000);
     }
   }
