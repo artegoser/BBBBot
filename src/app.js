@@ -134,11 +134,7 @@ class App {
                 `${this.settings.savePath}/notes/${this.currNoteId}.${this.settings.savedNotesFormat}`
               );
               s.message(`Заметка ${this.currNoteId} сохранена`);
-            } catch (e) {
-              s.message(
-                `Заметка ${this.currNoteId} не сохранена (ошибка в переименовывании) (${e.message})`
-              );
-            }
+            } catch {}
           }
         });
 
