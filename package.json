@@ -1,6 +1,6 @@
 {
   "name": "bbbbot",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Helpfull tools for BigBlueButton",
   "main": "dist/app.js",
   "scripts": {

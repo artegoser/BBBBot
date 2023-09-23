@@ -19,37 +19,43 @@ class App {
     intro("Настройка BigBlueButton бота");
   }
   async init() {
-    this.settings = await group({
-      url: () =>
-        text({ message: "Введите ссылку с которой можно попасть на Вебинар" }),
-      downloadSlides: () => confirm({ message: "Скачать презентацию?" }),
-      saveNotes: () => confirm({ message: "Сохранять заметки?" }),
-      savedNotesFormat: () =>
-        select({
-          message: "Формат заметок?",
-          initialValue: { value: "pdf", label: "PDF" },
-          options: [
-            { value: "pdf", label: "PDF" },
-            { value: "doc", label: "Word" },
-            { value: "html", label: "HTML" },
-            { value: "txt", label: "Текст" },
-            { value: "odt", label: "ODF (Open Document Format)" },
-            { value: "etherpad", label: "Etherpad" },
-          ],
-        }),
-      savePath: ({ results }) => {
-        if (results.downloadSlides || results.saveNotes)
-          return text({
-            message: "Введите путь куда сохранять данные",
-            initialValue: `./saves/${Date.now()}`,
-          });
+    this.settings = await group(
+      {
+        url: () =>
+          text({
+            message: "Введите ссылку с которой можно попасть на Вебинар",
+          }),
+        downloadSlides: () => confirm({ message: "Скачать презентацию?" }),
+        saveNotes: () => confirm({ message: "Сохранять заметки?" }),
+        savedNotesFormat: () =>
+          select({
+            message: "Формат заметок?",
+            initialValue: { value: "pdf", label: "PDF" },
+            options: [
+              { value: "pdf", label: "PDF" },
+              { value: "doc", label: "Word" },
+              { value: "html", label: "HTML" },
+              { value: "txt", label: "Текст" },
+              { value: "odt", label: "ODF (Open Document Format)" },
+              { value: "etherpad", label: "Etherpad" },
+            ],
+          }),
+        savePath: ({ results }) => {
+          if (results.downloadSlides || results.saveNotes)
+            return text({
+              message: "Введите путь куда сохранять данные",
+              initialValue: `./saves/${Date.now()}`,
+            });
+        },
       },
-    });
+      { onCancel: () => process.exit() }
+    );
 
     outro("Настройка BigBlueButton бота завершена");
 
     const browser = await puppeteer.launch({
       headless: false,
+      defaultViewport: null,
     });
     const page = await browser.newPage();
 
@@ -58,7 +64,6 @@ class App {
     await intro("Настройка в браузере");
     const result = await confirm({
       message: "Войдите на вебинар и нажмите Yes.",
-      defaultViewport: null,
     });
     await outro("Настройка в браузере завершена");
 
