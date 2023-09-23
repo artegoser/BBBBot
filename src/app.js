@@ -77,7 +77,7 @@ class App {
       );
 
       const slideData = await slideEl?.evaluate((el) => {
-        return el.getAttribute("src");
+        return el.getAttribute("xlink:href"); //пипец в чгу старая версия bbb
       });
 
       if (slideEl) {
@@ -88,7 +88,7 @@ class App {
       }
     }
 
-    await page.click(".listItem--Siv4F"); // кнопка заметок (может быть с другим классом в версии чгу)
+    await page.click(".listItem--Siv4F"); // кнопка заметок
 
     if (this.settings.saveNotes) {
       fs.mkdirSync(`${this.settings.savePath}/notes`, { recursive: true });
