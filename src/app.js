@@ -73,7 +73,7 @@ class App {
 
     if (this.settings.downloadSlides) {
       const slideEl = await page.waitForSelector(
-        "#slide-background-shape_image"
+        ".svgStyles--ZGah2R > g:nth-child(2) > g:nth-child(1) > g:nth-child(1) > image:nth-child(2)"
       );
 
       const slideData = await slideEl?.evaluate((el) => {
@@ -88,14 +88,14 @@ class App {
       }
     }
 
-    await page.click(".sc-ANeCo"); // кнопка заметок (может быть с другим классом в версии чгу)
+    await page.click(".listItem--Siv4F"); // кнопка заметок (может быть с другим классом в версии чгу)
 
     if (this.settings.saveNotes) {
       fs.mkdirSync(`${this.settings.savePath}/notes`, { recursive: true });
 
       setTimeout(async () => {
         const exportPdf = await page.waitForSelector(
-          "#layout > div:nth-child(2) > div > div > iframe"
+          ".note--1ESx6q > iframe:nth-child(2)"
         );
 
         const padLink = new URL(
@@ -106,11 +106,7 @@ class App {
 
         console.log(`Ссылка заметок: ${padLink.toString()}`);
 
-        const notesExportLink = `${
-          this.url.origin
-        }/pad/p/${padLink.searchParams.get("padName")}/export/${
-          this.settings.savedNotesFormat
-        }${this.url.search}`;
+        const notesExportLink = `${this.url.origin}${padLink.pathname}/export/${this.settings.savedNotesFormat}${this.url.search}`;
 
         console.log(
           `Ссылка экспорта ${this.settings.savedNotesFormat}:`,
